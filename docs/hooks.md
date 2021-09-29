@@ -31,6 +31,13 @@ Available Hooks
 
     Parameters: `WpOrg\Requests\Response &$return`
 
+* **`requests.failed`**
+
+    Alter/Inspect transport or response parsing exception before it is returned to the user.
+
+    Parameters: `Requests_Exception $exception`, `string &$url`, `array &$headers`, `array|string &$data`,
+    `string &$type`, `array &$options`
+
 * **`curl.before_request`**
 
     Set cURL options before the transport sets any (note that Requests may
