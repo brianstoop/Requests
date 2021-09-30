@@ -378,11 +378,20 @@ class Requests {
 			$capabilities = array('ssl' => $need_ssl);
 			$transport    = self::get_transport($capabilities);
 		}
-		$response = $transport->request($url, $headers, $data, $options);
 
-		$options['hooks']->dispatch('requests.before_parse', array(&$response, $url, $headers, $data, $type, $options));
+		try {
+			$response = $transport->request($url, $headers, $data, $options);
 
-		return self::parse_response($response, $url, $headers, $data, $options);
+			$options['hooks']->dispatch('requests.before_parse', array(&$response, $url, $headers, $data, $type, $options));
+
+			$parsed_response = self::parse_response($response, $url, $headers, $data, $options);
+		}
+		catch (Requests_Exception $e) {
+			$options['hooks']->dispatch('requests.failed', array(&$e, $url, $headers, $data, $type, $options));
+			throw $e;
+		}
+
+		return $parsed_response;
 	}
 
 	/**
