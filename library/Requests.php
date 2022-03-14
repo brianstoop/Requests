@@ -387,7 +387,10 @@ class Requests {
 			$parsed_response = self::parse_response($response, $url, $headers, $data, $options);
 		}
 		catch (Requests_Exception $e) {
-			$options['hooks']->dispatch('requests.failed', array(&$e, $url, $headers, $data, $type, $options));
+			if ($e->failed_hook_handled === FALSE) {
+				$options['hooks']->dispatch('requests.failed', array(&$e, $url, $headers, $data, $type, $options));
+				$e->failed_hook_handled = TRUE;
+			}
 			throw $e;
 		}
 
