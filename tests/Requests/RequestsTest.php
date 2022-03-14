@@ -16,6 +16,7 @@ use WpOrg\Requests\Tests\Fixtures\TransportInvalidArgumentMock;
 use WpOrg\Requests\Tests\Fixtures\TransportMock;
 use WpOrg\Requests\Tests\TestCase;
 use WpOrg\Requests\Tests\TypeProviderHelper;
+use WpOrg\Requests\Tests\Fixtures\TransportRedirectMock;
 
 final class RequestsTest extends TestCase {
 
@@ -159,7 +160,7 @@ final class RequestsTest extends TestCase {
 
 	public function testTransportFailedTriggersRequestsFailedCallback() {
 		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['failed'])->getMock();
-		$mock->expects($this->atLeastOnce())->method('failed');
+		$mock->expects($this->once())->method('failed');
 		$hooks = new Hooks();
 		$hooks->register('requests.failed', [$mock, 'failed']);
 
@@ -177,7 +178,7 @@ final class RequestsTest extends TestCase {
 
 	public function testTransportInvalidArgumentTriggersRequestsFailedCallback() {
 		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['failed'])->getMock();
-		$mock->expects($this->atLeastOnce())->method('failed');
+		$mock->expects($this->once())->method('failed');
 		$hooks = new Hooks();
 		$hooks->register('requests.failed', [$mock, 'failed']);
 
@@ -301,7 +302,7 @@ final class RequestsTest extends TestCase {
 	 */
 	public function testInvalidProtocolVersionTriggersRequestsFailedCallback() {
 		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['failed'])->getMock();
-		$mock->expects($this->atLeastOnce())->method('failed');
+		$mock->expects($this->once())->method('failed');
 		$hooks = new Hooks();
 		$hooks->register('requests.failed', [$mock, 'failed']);
 
@@ -339,7 +340,7 @@ final class RequestsTest extends TestCase {
 	 */
 	public function testSingleCRLFSeparatorTriggersRequestsFailedCallback() {
 		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['failed'])->getMock();
-		$mock->expects($this->atLeastOnce())->method('failed');
+		$mock->expects($this->once())->method('failed');
 		$hooks = new Hooks();
 		$hooks->register('requests.failed', [$mock, 'failed']);
 
@@ -371,7 +372,7 @@ final class RequestsTest extends TestCase {
 
 	public function testInvalidStatusTriggersRequestsFailedCallback() {
 		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['failed'])->getMock();
-		$mock->expects($this->atLeastOnce())->method('failed');
+		$mock->expects($this->once())->method('failed');
 		$hooks = new Hooks();
 		$hooks->register('requests.failed', [$mock, 'failed']);
 
@@ -398,6 +399,52 @@ final class RequestsTest extends TestCase {
 		$response = Requests::get('http://example.com/', [], $options);
 		$this->assertSame(302, $response->status_code);
 		$this->assertSame(0, $response->redirects);
+	}
+
+	public function testRedirectToExceptionTriggersRequestsFailedCallbackOnce() {
+		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['failed'])->getMock();
+		$mock->expects($this->once())->method('failed');
+		$hooks = new Hooks();
+		$hooks->register('requests.failed', [$mock, 'failed']);
+
+		$transport                       = new TransportRedirectMock();
+		$transport->redirected_transport = new TransportFailedMock();
+
+		$options  = [
+			'hooks'     => $hooks,
+			'transport' => $transport,
+		];
+
+		$this->expectException(Exception::class);
+		$this->expectExceptionMessage('Transport failed!');
+
+		$response = Requests::get('http://example.com/', [], $options);
+
+		$this->assertSame(302, $response->status_code);
+		$this->assertSame(1, $response->redirects);
+	}
+
+	public function testRedirectToInvalidArgumentTriggersRequestsFailedCallbackOnce() {
+		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['failed'])->getMock();
+		$mock->expects($this->once())->method('failed');
+		$hooks = new Hooks();
+		$hooks->register('requests.failed', [$mock, 'failed']);
+
+		$transport                       = new TransportRedirectMock();
+		$transport->redirected_transport = new TransportInvalidArgumentMock();
+
+		$options  = [
+			'hooks'     => $hooks,
+			'transport' => $transport,
+		];
+
+		$this->expectException(InvalidArgument::class);
+		$this->expectExceptionMessage('Argument #1 ($url) must be of type string|Stringable');
+
+		$response = Requests::get('http://example.com/', [], $options);
+
+		$this->assertSame(302, $response->status_code);
+		$this->assertSame(1, $response->redirects);
 	}
 
 	public function testTimeoutException() {
