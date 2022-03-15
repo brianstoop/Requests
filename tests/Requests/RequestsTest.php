@@ -8,12 +8,12 @@ use WpOrg\Requests\Hooks;
 use WpOrg\Requests\Iri;
 use WpOrg\Requests\Requests;
 use WpOrg\Requests\Response\Headers;
-use WpOrg\Requests\Tests\Fixtures\RawTransportMock;
 use WpOrg\Requests\Tests\Fixtures\StringableObject;
+use WpOrg\Requests\Tests\Fixtures\TransportMock;
+use WpOrg\Requests\Tests\Fixtures\RawTransportMock;
 use WpOrg\Requests\Tests\Fixtures\TestTransportMock;
 use WpOrg\Requests\Tests\Fixtures\TransportFailedMock;
 use WpOrg\Requests\Tests\Fixtures\TransportInvalidArgumentMock;
-use WpOrg\Requests\Tests\Fixtures\TransportMock;
 use WpOrg\Requests\Tests\TestCase;
 use WpOrg\Requests\Tests\TypeProviderHelper;
 use WpOrg\Requests\Tests\Fixtures\TransportRedirectMock;
@@ -410,7 +410,7 @@ final class RequestsTest extends TestCase {
 		$transport                       = new TransportRedirectMock();
 		$transport->redirected_transport = new TransportFailedMock();
 
-		$options  = [
+		$options = [
 			'hooks'     => $hooks,
 			'transport' => $transport,
 		];
@@ -433,7 +433,7 @@ final class RequestsTest extends TestCase {
 		$transport                       = new TransportRedirectMock();
 		$transport->redirected_transport = new TransportInvalidArgumentMock();
 
-		$options  = [
+		$options = [
 			'hooks'     => $hooks,
 			'transport' => $transport,
 		];

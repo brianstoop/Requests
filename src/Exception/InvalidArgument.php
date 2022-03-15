@@ -17,7 +17,7 @@ final class InvalidArgument extends InvalidArgumentException {
 	 *
 	 * @var boolean
 	 */
-	public $failed_hook_handled = FALSE;
+	public $failed_hook_handled = false;
 
 	/**
 	 * Create a new invalid argument exception with a standardized text.
