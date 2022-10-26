@@ -23,6 +23,7 @@ class Requests_Response_Headers extends Requests_Utility_CaseInsensitiveDictiona
 	 * @param string $key
 	 * @return string|null Header value
 	 */
+    #[\ReturnTypeWillChange]
 	public function offsetGet($key) {
 		$key = strtolower($key);
 		if (!isset($this->data[$key])) {
@@ -40,7 +41,7 @@ class Requests_Response_Headers extends Requests_Utility_CaseInsensitiveDictiona
 	 * @param string $key Item name
 	 * @param string $value Item value
 	 */
-	public function offsetSet($key, $value) {
+	public function offsetSet($key, $value): void {
 		if ($key === null) {
 			throw new Requests_Exception('Object is a dictionary, not a list', 'invalidset');
 		}
@@ -92,6 +93,7 @@ class Requests_Response_Headers extends Requests_Utility_CaseInsensitiveDictiona
 	 * Converts the internal
 	 * @return ArrayIterator
 	 */
+    #[\ReturnTypeWillChange]
 	public function getIterator() {
 		return new Requests_Utility_FilteredIterator($this->data, array($this, 'flatten'));
 	}
