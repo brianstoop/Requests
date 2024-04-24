@@ -3,6 +3,7 @@
 namespace WpOrg\Requests\Tests\Transport;
 
 use WpOrg\Requests\Exception;
+use WpOrg\Requests\Hooks;
 use WpOrg\Requests\Requests;
 use WpOrg\Requests\Tests\Transport\BaseTestCase;
 use WpOrg\Requests\Transport\Curl;
@@ -136,4 +137,38 @@ final class CurlTest extends BaseTestCase {
 
 		$this->assertFalse(isset($result['headers']['Expect']));
 	}
+
+	public function testMultipleTriggersCurlAfterRequestHookWithId() {
+		$requests = [
+			'get' => [
+				'url' => $this->httpbin('/get', true),
+			],
+			'post' => [
+				'url'  => $this->httpbin('/post', true),
+				'type' => Requests::POST,
+				'data' => 'test',
+			],
+		];
+
+		$mock = $this->getMockBuilder(stdClass::class)
+			->setMethods(['after_request'])
+			->getMock();
+
+		$mock->expects($this->atLeast(2))
+			->method('after_request')
+			->with(
+				$this->isType('string'),
+				$this->logicalAnd($this->isType('array'), $this->logicalNot($this->isEmpty())),
+				$this->isType('string')
+			);
+		$hooks = new Hooks();
+		$hooks->register('curl.after_request', [$mock, 'after_request']);
+
+		$options = [
+			'hooks' => $hooks,
+		];
+
+		Requests::request_multiple($requests, $this->getOptions($options));
+	}
+
 }

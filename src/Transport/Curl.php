@@ -300,7 +300,7 @@ final class Curl implements Transport {
 					$responses[$key] = $exception;
 					$options['hooks']->dispatch('transport.internal.parse_error', [&$responses[$key], $requests[$key]]);
 				} else {
-					$responses[$key] = $subrequests[$key]->process_response($subrequests[$key]->response_data, $options);
+					$responses[$key] = $subrequests[$key]->process_response($subrequests[$key]->response_data, $options, $key);
 
 					$options['hooks']->dispatch('transport.internal.parse_response', [&$responses[$key], $requests[$key]]);
 				}
@@ -464,13 +464,14 @@ final class Curl implements Transport {
 	 *
 	 * @param string $response Response data from the body
 	 * @param array $options Request options
+	 * @param int|string|null $id ID of a multi-request
 	 * @return string|false HTTP response data including headers. False if non-blocking.
 	 * @throws \WpOrg\Requests\Exception If the request resulted in a cURL error.
 	 */
-	public function process_response($response, $options) {
+	public function process_response($response, $options, $id = null) {
 		if ($options['blocking'] === false) {
 			$fake_headers = '';
-			$options['hooks']->dispatch('curl.after_request', [&$fake_headers]);
+			$options['hooks']->dispatch('curl.after_request', [&$fake_headers, null, $id]);
 			return false;
 		}
 
@@ -492,7 +493,7 @@ final class Curl implements Transport {
 
 		$this->info = curl_getinfo($this->handle);
 
-		$options['hooks']->dispatch('curl.after_request', [&$this->headers, &$this->info]);
+		$options['hooks']->dispatch('curl.after_request', [&$this->headers, &$this->info, $id]);
 		return $this->headers;
 	}
 

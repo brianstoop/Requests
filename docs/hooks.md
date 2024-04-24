@@ -100,7 +100,7 @@ Available Hooks
 
     Alter the raw HTTP response before returning for parsing.
 
-    Parameters: `string &$headers`, `[array &$info]`
+    Parameters: `string &$headers`, `[array &$info]`, `[int|string $id]`
 
     The optional `$info` parameter contains the associated array as defined in
     the return value for [curl_getinfo()](https://www.php.net/curl-getinfo#refsect1-function.curl-getinfo-returnvalues).
