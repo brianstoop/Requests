@@ -53,6 +53,13 @@ Available Hooks
     Parameters: `WpOrg\Requests\Response &$return`, `array &$req_headers`,
     `array &$req_data`, `array &$options`
 
+* **`multiple.request.before_request_multiple`**
+
+    Alter the request before it is sent to the transport.
+
+    Parameters: `string &$url`, `array &$headers`, `array|null &$data`,
+    `string &$type`, `array &$options, string|int $id`
+
 * **`multiple.request.complete`**
 
     Alter the response for an individual request in a multi-request.

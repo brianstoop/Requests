@@ -153,6 +153,43 @@ final class RequestsTest extends TestCase {
 		Requests::request_multiple([], $input);
 	}
 
+	public function testRequestMultipleTriggersBeforeRequestMultipleCallback() {
+		$mock = $this->getMockBuilder(stdClass::class)->setMethods(['before_request_multiple'])->getMock();
+		$mock->expects($this->exactly(2))->method('before_request_multiple');
+		$hooks = new Hooks();
+		$hooks->register('multiple.request.before_request_multiple', [ $mock, 'before_request_multiple' ]);
+
+		$transport = new TransportMock();
+
+		$options = [
+			'hooks'     => $hooks,
+			'transport' => $transport,
+		];
+
+		$requests = [
+			'test'  => [
+				'url'     => 'http://example.com/',
+				'options' => [
+					'mock.code'        => 200,
+					'mock.chunked'     => false,
+					'mock.body'        => 'Test Body',
+					'mock.raw_headers' => '',
+				],
+			],
+			'test2' => [
+				'url'     => 'http://example.com/',
+				'options' => [
+					'mock.code'        => 200,
+					'mock.chunked'     => false,
+					'mock.body'        => 'Test Body',
+					'mock.raw_headers' => '',
+				],
+			],
+		];
+
+		Requests::request_multiple($requests, $options);
+	}
+
 	/**
 	 * Data Provider.
 	 *

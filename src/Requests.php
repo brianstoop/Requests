@@ -586,6 +586,10 @@ class Requests {
 					$request['options']['hooks']->register('multiple.request.complete', $request['options']['complete']);
 				}
 			}
+
+			if (!empty($options['hooks'])) {
+				$options['hooks']->dispatch('multiple.request.before_request_multiple', [$request['url'], $request['headers'], $request['data'], $request['type'], $request['options'], $id]);
+			}
 		}
 
 		unset($request);
