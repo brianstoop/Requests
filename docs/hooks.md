@@ -100,12 +100,14 @@ Available Hooks
 
     Alter the raw HTTP response before returning for parsing.
 
-    Parameters: `string &$headers`, `[array &$info]`, `[int|string $id]`
+    Parameters: `string &$headers`, `[array|null &$info]`, `[int|string $id]`
 
     The optional `$info` parameter contains the associated array as defined in
     the return value for [curl_getinfo()](https://www.php.net/curl-getinfo#refsect1-function.curl-getinfo-returnvalues).
 
-This optional parameter will be present when a blocking request was made (`$options['blocking' = true`) and will not be present when a non-blocking request was made (`$options['blocking' = false`). The callback signature needs to be adapted accordingly.
+	This optional parameter will be present when a blocking request was made (`$options['blocking' = true`) and will not be present when a non-blocking request was made (`$options['blocking' = false`). The callback signature needs to be adapted accordingly.
+	
+	The optional `$id` parameter contains the ID of a request issued with `multiple_request()`.
 
 * **`curl.before_multi_add`**
 

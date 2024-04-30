@@ -471,7 +471,7 @@ final class Curl implements Transport {
 	public function process_response($response, $options, $id = null) {
 		if ($options['blocking'] === false) {
 			$fake_headers = '';
-			$options['hooks']->dispatch('curl.after_request', [&$fake_headers, null, $id]);
+			$options['hooks']->dispatch('curl.after_request', is_null($id) ? [&$fake_headers] : [&$fake_headers, null, $id]);
 			return false;
 		}
 
@@ -493,7 +493,7 @@ final class Curl implements Transport {
 
 		$this->info = curl_getinfo($this->handle);
 
-		$options['hooks']->dispatch('curl.after_request', [&$this->headers, &$this->info, $id]);
+		$options['hooks']->dispatch('curl.after_request', is_null($id) ? [&$this->headers, &$this->info] : [&$this->headers, &$this->info, $id]);
 		return $this->headers;
 	}
 
