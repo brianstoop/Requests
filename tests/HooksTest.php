@@ -98,6 +98,70 @@ class HooksTest extends TestCase {
 	}
 
 	/**
+	 * Technical test to verify the functionality of the Hooks::register() method.
+	 *
+	 * @covers ::register
+	 *
+	 * @return void
+	 */
+	public function testRegisterDuplicateHook() {
+		// Verify initial state or the hooks property.
+		$this->assertSame(
+			[],
+			$this->getPropertyValue($this->hooks, 'hooks'),
+			'Initial state of $hooks is not an empty array'
+		);
+
+		// Verify that the subkeys are created correctly when they don't exist yet.
+		$this->hooks->register('hookname', [$this, 'dummyCallback1']);
+		$this->assertSame(
+			[
+				'hookname' => [
+					0 => [
+						[$this, 'dummyCallback1'],
+					],
+				],
+			],
+			$this->getPropertyValue($this->hooks, 'hooks'),
+			'Initial hook registration failed'
+		);
+
+		// Verify that the subkeys are re-used when they already exist.
+		$this->hooks->register('hookname', [$this, 'dummyCallback1']);
+		$this->assertSame(
+			[
+				'hookname' => [
+					0 => [
+						[$this, 'dummyCallback1'],
+					],
+				],
+			],
+			$this->getPropertyValue($this->hooks, 'hooks'),
+			'Registering the same callback on the same hook with the same priority does not register twice'
+		);
+
+		/*
+		 * Verify that new subkeys are created when needed.
+		 * Also verifies that the input validation isn't too strict for the priority.
+		 */
+		$this->hooks->register('hookname', [$this, 'dummyCallback1'], '10');
+		$this->assertSame(
+			[
+				'hookname' => [
+					0  => [
+						[$this, 'dummyCallback1'],
+					],
+					10 => [
+						[$this, 'dummyCallback1'],
+					],
+				],
+			],
+			$this->getPropertyValue($this->hooks, 'hooks'),
+			'Registering the same callback on a different priority for an existing hook succeeds'
+		);
+	}
+
+	/**
 	 * Technical test to verify and safeguard Hooks::register() accepts closure callbacks.
 	 *
 	 * @covers ::register

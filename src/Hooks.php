@@ -55,7 +55,9 @@ class Hooks implements HookManager {
 			$this->hooks[$hook][$priority] = [];
 		}
 
-		$this->hooks[$hook][$priority][] = $callback;
+		if (!in_array($callback, $this->hooks[$hook][$priority], true)) {
+			$this->hooks[$hook][$priority][] = $callback;
+		}
 	}
 
 	/**
