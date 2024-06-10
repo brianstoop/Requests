@@ -127,6 +127,7 @@ final class Curl implements Transport {
 	public function __destruct() {
 		if (is_resource($this->handle)) {
 			curl_close($this->handle);
+			unset($this->handle);
 		}
 	}
 
@@ -307,6 +308,7 @@ final class Curl implements Transport {
 
 				curl_multi_remove_handle($multihandle, $done['handle']);
 				curl_close($done['handle']);
+				unset($done['handle']);
 
 				if (!is_string($responses[$key])) {
 					$options['hooks']->dispatch('multiple.request.complete', [&$responses[$key], $key]);
@@ -319,6 +321,7 @@ final class Curl implements Transport {
 		$request['options']['hooks']->dispatch('curl.after_multi_exec', [&$multihandle]);
 
 		curl_multi_close($multihandle);
+		unset($multihandle);
 
 		return $responses;
 	}
