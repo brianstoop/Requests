@@ -252,6 +252,9 @@ final class Curl implements Transport {
 		}
 
 		$multihandle = curl_multi_init();
+
+		curl_multi_setopt($multihandle, CURLMOPT_MAX_HOST_CONNECTIONS, 10);
+
 		$subrequests = [];
 		$subhandles  = [];
 
