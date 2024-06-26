@@ -251,74 +251,84 @@ final class Curl implements Transport {
 			throw InvalidArgument::create(2, '$options', 'array', gettype($options));
 		}
 
-		$multihandle = curl_multi_init();
-		$subrequests = [];
-		$subhandles  = [];
+		$multihandle    = curl_multi_init();
+		$responses      = [];
+		$class 		    = get_class($this);
+		$requesthandles = [];
 
-		$class = get_class($this);
-		foreach ($requests as $id => $request) {
-			$subrequests[$id] = new $class();
-			$subhandles[$id]  = $subrequests[$id]->get_subrequest_handle($request['url'], $request['headers'], $request['data'], $request['options']);
-			$request['options']['hooks']->dispatch('curl.before_multi_add', [&$subhandles[$id]]);
-			curl_multi_add_handle($multihandle, $subhandles[$id]);
+		for ($i=0; $i < 10; $i++) {
+			$requesthandles[] = new $class();
 		}
 
-		$completed       = 0;
-		$responses       = [];
-		$subrequestcount = count($subrequests);
+		foreach (array_chunk($requests, 10) as &$batch)
+        {
+            $subrequests = [];
+			$subhandles  = [];
 
-		$request['options']['hooks']->dispatch('curl.before_multi_exec', [&$multihandle]);
+			foreach ($batch as $id => $request) {
+				$subrequests[$id] = array_shift($requesthandles);
+				$subhandles[$id]  = $subrequests[$id]->get_subrequest_handle($request['url'], $request['headers'], $request['data'], $request['options']);
+				$request['options']['hooks']->dispatch('curl.before_multi_add', [&$subhandles[$id]]);
+				curl_multi_add_handle($multihandle, $subhandles[$id]);
+			}
 
-		do {
-			$active = 0;
+			$completed       = 0;
+			$subrequestcount = count($subrequests);
+
+			$request['options']['hooks']->dispatch('curl.before_multi_exec', [&$multihandle]);
 
 			do {
-				$status = curl_multi_exec($multihandle, $active);
-			} while ($status === CURLM_CALL_MULTI_PERFORM);
+				$active = 0;
 
-			$to_process = [];
+				do {
+					$status = curl_multi_exec($multihandle, $active);
+				} while ($status === CURLM_CALL_MULTI_PERFORM);
 
-			// Read the information as needed
-			while ($done = curl_multi_info_read($multihandle)) {
-				$key = array_search($done['handle'], $subhandles, true);
-				if (!isset($to_process[$key])) {
-					$to_process[$key] = $done;
-				}
-			}
+				$to_process = [];
 
-			// Parse the finished requests before we start getting the new ones
-			foreach ($to_process as $key => $done) {
-				$options = $requests[$key]['options'];
-				if ($done['result'] !== CURLE_OK) {
-					//get error string for handle.
-					$reason          = curl_error($done['handle']);
-					$exception       = new CurlException(
-						$reason,
-						CurlException::EASY,
-						$done['handle'],
-						$done['result']
-					);
-					$responses[$key] = $exception;
-					$options['hooks']->dispatch('transport.internal.parse_error', [&$responses[$key], $requests[$key]]);
-				} else {
-					$responses[$key] = $subrequests[$key]->process_response($subrequests[$key]->response_data, $options, $key);
-
-					$options['hooks']->dispatch('transport.internal.parse_response', [&$responses[$key], $requests[$key]]);
+				// Read the information as needed
+				while ($done = curl_multi_info_read($multihandle)) {
+					$key = array_search($done['handle'], $subhandles, true);
+					if (!isset($to_process[$key])) {
+						$to_process[$key] = $done;
+					}
 				}
 
-				curl_multi_remove_handle($multihandle, $done['handle']);
-				curl_close($done['handle']);
-				unset($done['handle']);
+				// Parse the finished requests before we start getting the new ones
+				foreach ($to_process as $key => $done) {
+					$options = $batch[$key]['options'];
+					if ($done['result'] !== CURLE_OK) {
+						//get error string for handle.
+						$reason          = curl_error($done['handle']);
+						$exception       = new CurlException(
+							$reason,
+							CurlException::EASY,
+							$done['handle'],
+							$done['result']
+						);
+						$responses[$key] = $exception;
+						$options['hooks']->dispatch('transport.internal.parse_error', [&$responses[$key], $batch[$key]]);
+					} else {
+						$responses[$key] = $subrequests[$key]->process_response($subrequests[$key]->response_data, $options, $key);
 
-				if (!is_string($responses[$key])) {
-					$options['hooks']->dispatch('multiple.request.complete', [&$responses[$key], $key]);
+						$options['hooks']->dispatch('transport.internal.parse_response', [&$responses[$key], $batch[$key]]);
+					}
+
+					curl_multi_remove_handle($multihandle, $done['handle']);
+					$requesthandles[] = $subrequests[$key];
+
+					if (!is_string($responses[$key])) {
+						$options['hooks']->dispatch('multiple.request.complete', [&$responses[$key], $key]);
+					}
+
+					$completed++;
 				}
+			} while ($active || $completed < $subrequestcount);
 
-				$completed++;
-			}
-		} while ($active || $completed < $subrequestcount);
+			$request['options']['hooks']->dispatch('curl.after_multi_exec', [&$multihandle]);
 
-		$request['options']['hooks']->dispatch('curl.after_multi_exec', [&$multihandle]);
+			unset($subrequests);
+		}
 
 		curl_multi_close($multihandle);
 		unset($multihandle);
